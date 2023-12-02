@@ -2,6 +2,8 @@ import requests
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ConversationHandler, CallbackContext, filters
 from decouple import config
+from datetime import datetime
+import matplotlib.pylab as plt
 
 TOKEN = config("API_KEY_BOT")
 API_KEY = config("API_KEY_LAYER")
@@ -11,6 +13,7 @@ SELECTING, CHOOSING_CURRENCY, MONITORING = range(3)
 selected_currency = None
 
 rate_data = []
+time_data = []
 
 async def start(update: Update, context: CallbackContext):
     user = update.effective_user
@@ -49,12 +52,20 @@ async def monitor_currency(update: Update, context: CallbackContext):
         response = requests.get(url, headers=headers)
         data = response.json()
 
-        if 'error' in data:
-            await update.message.reply_text(f"Error: {data['error']['info']}")
-        else:
-            rate = data['quotes'].get(f'USD{selected_currency}')
-            rate_data.append(rate)
-            await update.message.reply_text(f"Текущий курс {selected_currency}: {rate}")
+        try:
+            if 'error' in data:
+                print("error")
+                await update.message.reply_text(f"Error: {data['error']['info']}")
+            else:
+                rate = data['quotes'].get(f'USD{selected_currency}')
+                rate_data.append(rate)
+                time_data.append(str(datetime.now().strftime("%d-%m-%Y %H:%M:%S")))
+                print(rate_data, "\n", time_data)
+                draw(time_data, rate_data)
+                await update.message.reply_text(f"Текущий курс {selected_currency}: {rate}")
+
+        except:
+            print("error execpt")
     else:
         await update.message.reply_text("Выберите валюту, используя /monitor.")
     return SELECTING
@@ -75,6 +86,22 @@ def main():
     application.add_handler(CommandHandler("monitor_currency", monitor_currency))
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
+
+def draw(datetimes, values):
+    # Создание графика
+    plt.figure(figsize=(10, 6))
+    plt.plot(datetimes, values, marker='o')
+
+    # Поворот меток времени для лучшей читаемости
+    plt.gcf().autofmt_xdate()
+
+    #Наименование осей и графика
+    plt.xlabel('Время')
+    plt.ylabel('Значения')
+    plt.title('График курса выбранной валюты')
+    plt.grid(True)
+
+    plt.savefig("graph.png")
 
 if __name__ == "__main__":
     main()
