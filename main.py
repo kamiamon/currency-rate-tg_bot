@@ -6,6 +6,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import asyncio
 import json
+import os
 
 TOKEN = config("API_KEY_BOT")
 API_KEY = config("API_KEY_LAYER")
@@ -20,6 +21,18 @@ time_data = []
 
 min_threshold = None
 max_threshold = None
+
+CACHE_FILE_PATH = 'rate_data_cache.json'
+
+def load_rate_data_from_cache():
+    if os.path.exists(CACHE_FILE_PATH):
+        with open(CACHE_FILE_PATH, 'r') as file:
+            return json.load(file)
+    return {}
+
+def save_rate_data_to_cache(data):
+    with open(CACHE_FILE_PATH, 'w') as file:
+        json.dump(data, file)
 
 async def start(update: Update, context: CallbackContext):
     user = update.effective_user
@@ -118,47 +131,68 @@ async def monitor_start(update: Update, context: CallbackContext):
                         rate = data['quotes'].get(f'USD{selected_currency}')
                         rate_data.append(rate)
                         time_data.append(str(datetime.now().strftime("%d-%m %H:%M")))
+
+                        currency_cache_data = load_rate_data_from_cache()
+                        if selected_currency not in currency_cache_data:
+                            currency_cache_data[selected_currency] = {'rates': [], 'times': []}
+                        currency_cache_data[selected_currency]['rates'].append(rate)
+                        currency_cache_data[selected_currency]['times'].append(str(datetime.now().strftime("%d-%m %H:%M")))
+                        save_rate_data_to_cache(currency_cache_data)
+
                         await draw_graph()
 
                         if min_threshold is not None and rate < min_threshold:
-                            await update.message.reply_text(f"\u26A0 Внимание! Курс {selected_currency} преодолел минимальное пороговое значение: {rate}")
+                            await update.message.reply_text(
+                                f"\u26A0 Внимание! Курс {selected_currency} преодолел минимальное пороговое значение: {rate}")
 
                         if max_threshold is not None and rate > max_threshold:
-                            await update.message.reply_text(f"\u26A0 Внимание! Курс {selected_currency} преодолел максимальное пороговое значение: {rate}")
+                            await update.message.reply_text(
+                                f"\u26A0 Внимание! Курс {selected_currency} преодолел максимальное пороговое значение: {rate}")
 
-                except:
-                    print("error except")
+                except Exception as e:
+                    print(f"Error: {e}")
 
                 await asyncio.sleep(monitoring_interval * 60)
 
         task = asyncio.create_task(monitor_task())
         context.user_data['job'] = task
-        await update.message.reply_text(f"\U0001F680 Мониторинг курса {selected_currency} начат с интервалом {monitoring_interval} минут.\n\n"
-                                        "Используйте команду /get_currency, чтобы узнать последнее значение курса.\n\n"
-                                        "Используйте команду /get_graph, чтобы получить график валюты.")
+        await update.message.reply_text(
+            f"\U0001F680 Мониторинг курса {selected_currency} начат с интервалом {monitoring_interval} минут.\n\n"
+            "Используйте команду /get_currency, чтобы узнать последнее значение курса.\n\n"
+            "Используйте команду /get_graph, чтобы получить график валюты.")
     else:
         await update.message.reply_text("Настройте мониторинг, используя /settings.")
     return SELECTING
 
 async def get_currency(update: Update, context: CallbackContext):
-    if rate_data:
-        last_rate = rate_data[-1]
-        await update.message.reply_text(f"\U0001F3C1 Последнее значение курса {selected_currency}: {last_rate}")
+    if selected_currency:
+        currency_cache_data = load_rate_data_from_cache()
+        if selected_currency in currency_cache_data:
+            last_rate = currency_cache_data[selected_currency]['rates'][-1]
+            await update.message.reply_text(f"\U0001F3C1 Последнее значение курса {selected_currency}: {last_rate}")
+        else:
+            await update.message.reply_text("\U0000274C Нет данных о курсе. Начните мониторинг с помощью /monitor_start.")
     else:
-        await update.message.reply_text("\U0000274C Нет данных о курсе. Начните мониторинг с помощью /monitor_start.")
+        await update.message.reply_text("\U0000274C Не выбрана валюта для мониторинга. Используйте /settings.")
 
 async def draw_graph():
-    if time_data and rate_data:
-        plt.figure(figsize=(10, 6))
-        plt.plot(time_data, rate_data, marker='o')
-        plt.gcf().autofmt_xdate()
-        plt.xlabel('Время')
-        plt.ylabel('Значения')
-        plt.title(f'График курса {selected_currency}')
-        plt.legend([f'{selected_currency} к USD'], loc='upper right')
-        plt.grid(True)
+    if selected_currency:
+        currency_cache_data = load_rate_data_from_cache()
+        if selected_currency in currency_cache_data:
+            rates = currency_cache_data[selected_currency]['rates']
+            times = currency_cache_data[selected_currency]['times']
 
-        plt.savefig(f"{selected_currency}.png")
+            plt.figure(figsize=(10, 6))
+            plt.plot(times[-12:], rates[-12:], marker='o')
+            plt.gcf().autofmt_xdate()
+            plt.xlabel('Время')
+            plt.ylabel('Значения')
+            plt.title(f'График курса {selected_currency}')
+            plt.legend([f'{selected_currency} к USD'], loc='upper right')
+            plt.grid(True)
+
+            plt.savefig(f"{selected_currency}.png")
+
 
 async def get_graph(update: Update, context: CallbackContext):
     with open(f"{selected_currency}.png", 'rb') as photo_file:
