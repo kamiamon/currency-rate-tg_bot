@@ -15,6 +15,11 @@ SELECTING, CHOOSING_CURRENCY, CHOOSING_INTERVAL, SETTING_MIN_THRESHOLDS, SETTING
 
 CACHE_FILE_PATH = 'rate_data_cache.json'
 
+currencies_file_path = 'valid_currencies.json'
+
+with open(currencies_file_path, 'r', encoding='utf-8') as file:
+    currencies_data = json.load(file)
+
 def load_rate_data_from_cache():
     if os.path.exists(CACHE_FILE_PATH):
         with open(CACHE_FILE_PATH, 'r') as file:
@@ -34,24 +39,15 @@ async def start(update: Update, context: CallbackContext):
     )
     return SELECTING
 
-
 async def cancel(update: Update, context: CallbackContext):
     job = context.user_data.get('job')
     if job:
         job.cancel()
-
     context.user_data.clear()
 
     await update.message.reply_text("\U000026D4 Мониторинг отменен. Все настройки сброшены.\n\n"
                                     "Используйте /settings, чтобы настроить мониторинг.")
-
     return ConversationHandler.END
-
-
-currencies_file_path = 'valid_currencies.json'
-
-with open(currencies_file_path, 'r', encoding='utf-8') as file:
-    currencies_data = json.load(file)
 
 def is_valid_currency(currency):
     return currency.upper() in currencies_data.get('currencies', {})
@@ -81,7 +77,7 @@ async def set_interval(update: Update, context: CallbackContext):
             raise ValueError("\U0000274C Интервал мониторинга должен быть положительным числом.")
         await update.message.reply_text(
             f"\U000023F1 Выбран интервал мониторинга: {context.user_data['monitoring_interval']} минут.\n\n"
-            "Введите минимальное значение курса:"
+            "Введите нижнее значение курса, при достижении которого бот будет Вас уведомлять:"
         )
         return SETTING_MIN_THRESHOLDS
     except ValueError:
@@ -91,24 +87,24 @@ async def set_interval(update: Update, context: CallbackContext):
 async def set_min_threshold(update: Update, context: CallbackContext):
     try:
         context.user_data['min_threshold'] = float((update.message.text).replace(',', '.'))
-        await update.message.reply_text(f"\U0001F4C9 Минимальное пороговое значение установлено: {context.user_data['min_threshold']}.\n\n"
-                                        "Введите максимальное значение:")
+        await update.message.reply_text(f"\U0001F4C9 Нижняя граница установлена: {context.user_data['min_threshold']}\n\n"
+                                        "Введите вверхнее значение курса, при достижении которого бот будет Вас уведомлять:")
         return SETTING_MAX_THRESHOLDS
     except ValueError:
-        await update.message.reply_text("\U0000274C Пожалуйста, введите корректное числовое значение для минимального порога.")
+        await update.message.reply_text("\U0000274C Пожалуйста, введите корректное числовое значение для нижней границы.")
         return SETTING_MIN_THRESHOLDS
 
 async def set_max_threshold(update: Update, context: CallbackContext):
     try:
         context.user_data['max_threshold'] = float((update.message.text).replace(',', '.'))
-        await update.message.reply_text(f"\U0001F4C8 Максимальное пороговое значение установлено: {context.user_data['max_threshold']}.\n"
-                                        "Используйте /monitor_start, чтобы начать мониторинг.")
+        await update.message.reply_text(f"\U0001F4C8 Верхняя граница установлена: {context.user_data['max_threshold']}\n\n"
+                                        "Используйте /monitor, чтобы начать мониторинг.")
         return ConversationHandler.END
     except ValueError:
-        await update.message.reply_text("\U0000274C Пожалуйста, введите корректное числовое значение для максимального порога.")
+        await update.message.reply_text("\U0000274C Пожалуйста, введите корректное числовое значение для верхней границы.")
         return SETTING_MAX_THRESHOLDS
 
-async def monitor_start(update: Update, context: CallbackContext):
+async def monitor(update: Update, context: CallbackContext):
     selected_currency = context.user_data.get('selected_currency')
     monitoring_interval = context.user_data.get('monitoring_interval')
     min_threshold = context.user_data.get('min_threshold')
@@ -141,11 +137,11 @@ async def monitor_start(update: Update, context: CallbackContext):
 
                         if min_threshold is not None and rate < min_threshold:
                             await update.message.reply_text(
-                                f"\u26A0 Внимание!\n\nКурс {selected_currency} преодолел минимальное пороговое значение: {rate}")
+                                f"\u26A0 Внимание!\n\nКурс {selected_currency} преодолел нижнюю границу: {rate}")
 
                         if max_threshold is not None and rate > max_threshold:
                             await update.message.reply_text(
-                                f"\u26A0 Внимание!\n\nКурс {selected_currency} преодолел максимальное пороговое значение: {rate}")
+                                f"\u26A0 Внимание!\n\nКурс {selected_currency} преодолел верхнюю границу: {rate}")
 
                 except Exception as e:
                     print(f"Error: {e}")
@@ -193,7 +189,7 @@ async def currency(update: Update, context: CallbackContext):
                 caption_text = f"\U0001F3C1 Последнее значение курса {selected_currency}: {last_rate}"
                 await update.message.reply_photo(photo=photo_file, caption=caption_text)
         else:
-            await update.message.reply_text("\U0000274C Нет данных о курсе. Начните мониторинг с помощью /monitor_start.")
+            await update.message.reply_text("\U0000274C Нет данных о курсе. Начните мониторинг с помощью /monitor.")
     else:
         await update.message.reply_text("\U0000274C Не выбрана валюта для мониторинга.\n\nИспользуйте /settings.")
 
@@ -214,7 +210,7 @@ def main():
     )
 
     application.add_handler(conv_handler)
-    application.add_handler(CommandHandler("monitor_start", monitor_start))
+    application.add_handler(CommandHandler("monitor", monitor))
     application.add_handler(CommandHandler("currency", currency))
     application.add_handler(CommandHandler("cancel", cancel))
 
