@@ -13,9 +13,9 @@ API_KEY = config("API_KEY_LAYER")
 
 SELECTING, CHOOSING_CURRENCY, CHOOSING_INTERVAL, SETTING_MIN_THRESHOLDS, SETTING_MAX_THRESHOLDS, MONITORING = range(6)
 
-CACHE_FILE_PATH = 'rate_data_cache.json'
+CACHE_FILE_PATH = 'data/rate_data_cache.json'
 
-currencies_file_path = 'valid_currencies.json'
+currencies_file_path = 'data/valid_currencies.json'
 
 with open(currencies_file_path, 'r', encoding='utf-8') as file:
     currencies_data = json.load(file)
@@ -175,7 +175,7 @@ async def draw_graph(update: Update, context: CallbackContext):
             plt.legend([f'{selected_currency} к USD'], loc='upper right')
             plt.grid(True)
 
-            plt.savefig(f"{selected_currency}.png")
+            plt.savefig(f"graphs/{selected_currency}.png")
 
 async def currency(update: Update, context: CallbackContext):
     selected_currency = context.user_data.get('selected_currency')
@@ -185,7 +185,7 @@ async def currency(update: Update, context: CallbackContext):
         if selected_currency in currency_cache_data:
             last_rate = currency_cache_data[selected_currency]['rates'][-1]
 
-            with open(f"{selected_currency}.png", 'rb') as photo_file:
+            with open(f"graphs/{selected_currency}.png", 'rb') as photo_file:
                 caption_text = f"\U0001F3C1 Последнее значение курса {selected_currency}: {last_rate}"
                 await update.message.reply_photo(photo=photo_file, caption=caption_text)
         else:
