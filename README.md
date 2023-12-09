@@ -20,8 +20,8 @@ Before running the bot, make sure you have the following dependencies installed:
 
 1. Clone the repository:
 
-        git clone https://github.com/yourusername/currency-monitor-bot.git
-        cd currency-monitor-bot
+        git clone https://github.com/yourusername/currencyrate_telegram_bot.git
+        cd currencyrate_telegram_bot
 
 2. Install dependencies:
 
