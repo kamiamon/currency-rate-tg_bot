@@ -14,11 +14,13 @@ API_KEY = config("API_KEY_LAYER")
 SELECTING, CHOOSING_CURRENCY, CHOOSING_INTERVAL, SETTING_MIN_THRESHOLDS, SETTING_MAX_THRESHOLDS, MONITORING = range(6)
 
 CACHE_FILE_PATH = 'data/rate_data_cache.json'
-
 currencies_file_path = 'data/valid_currencies.json'
 
 with open(currencies_file_path, 'r', encoding='utf-8') as file:
     currencies_data = json.load(file)
+
+if not os.path.exists("graphs"):
+    os.makedirs("graphs")
 
 def load_rate_data_from_cache():
     if os.path.exists(CACHE_FILE_PATH):
@@ -157,6 +159,7 @@ async def monitor(update: Update, context: CallbackContext):
     else:
         await update.message.reply_text("\U00002699 Настройте мониторинг, используя команду /settings.")
     return SELECTING
+
 async def draw_graph(update: Update, context: CallbackContext):
     selected_currency = context.user_data.get('selected_currency')
 
