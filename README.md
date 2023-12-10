@@ -1,51 +1,51 @@
-# Currency Monitoring Telegram Bot
+# Telegram-бот для мониторинга валют
 
-This Telegram bot is designed for monitoring currency exchange rates. Users can configure the bot to track specific currencies, set monitoring intervals, and receive notifications based on threshold values.
+Данный Telegram-бот предназначен для мониторинга курсов обмена валют. Пользователи могут настроить бота для отслеживания определенных валют, устанавливать интервалы мониторинга и получать уведомления на основе пороговых значений.
 
-## Features
+## Функции
 
-- Currency Selection: Choose the currency to monitor (e.g., EUR, USD, JPY)
-- Interval Setting: Set the monitoring interval in minutes
-- Threshold Alerts: Receive notifications when the currency rate goes beyond specified thresholds
-- Graphical Representation: View historical currency rates through graphical charts
+- Выбор валюты: Выберите валюту для мониторинга (например, EUR, USD, JPY)
+- Настройка интервала: Установите интервал мониторинга в минутах
+- Пороговые оповещения: Получайте уведомления, когда курс валюты выходит за указанные пороговые значения
+- Графическое представление: Просматривайте исторические курсы валют с помощью графических графиков
 
-## Prerequisites
+## Предварительные условия
 
-Before running the bot, make sure you have the following dependencies installed:
+Перед запуском бота убедитесь, что у вас установлены следующие зависимости:
 
 - Python 3.x
-- Required Python packages (See requirements.txt)
+- Необходимые библиотеки Python (см. requirements.txt)
 
-## Setup
+## Установка
 
-1. Clone the repository:
+1. Клонируем репозиторий:
 
-        git clone https://github.com/yourusername/currencyrate_telegram_bot.git
+        git clone https://github.com/kamiamon/currencyrate_telegram_bot.git
         cd currencyrate_telegram_bot
 
-2. Install dependencies:
+2. Устанавливаем зависимости:
 
         pip install -r requirements.txt
 
-3. Configure API keys:
+3. Настройка ключей API:
 
-- Create a Telegram bot via @BotFather and get an API key
-- Obtain an API key from the [API Layer](https://apilayer.com/marketplace/currency_data-api) service for currency data
+- Создайте Telegram-бота через @BotFather и получите ключ API
+- Получите ключ API из сервиса [API Layer](https://apilayer.com/marketplace/currency_data-api) для данных о валюте
 
-4. Create a .env file in the project root and add your API keys:
+4. Создайте файл .env в корне проекта и добавьте свои API-ключи:
 
-        API_KEY_BOT="your_telegram_bot_api_key"
-        API_KEY_LAYER="your_currency_layer_api_key"
+        API_KEY_BOT="telegram_bot_api_key"
+        API_KEY_LAYER="currency_api_layer_key"
 
-5. Run the bot:
+5. Запустите бота:
 
-        python your_bot_script.py
+        python main.py
 
-## Usage
+## Использование
 
-1. Start the bot by sending /start to initiate the setup process
-2. Use /settings to configure monitoring preferences
-3. Follow the bot's instructions to set the currency, monitoring interval, and threshold values
-4. Start monitoring with /monitor
-5. Check the latest currency rate with /currency
-6. Cancel monitoring with /cancel at any time
+1. Запустите бота, отправив /start, чтобы инициировать процесс настройки
+2. Используйте /settings для настройки параметров мониторинга
+3. Следуйте инструкциям бота, чтобы установить валюту, интервал мониторинга и пороговые значения
+4. Запустите мониторинг с помощью /monitor
+5. Проверьте последний курс валюты с помощью /currency
+6. Отмените мониторинг с помощью /cancel в любое время
