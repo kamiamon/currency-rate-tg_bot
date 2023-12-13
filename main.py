@@ -8,15 +8,15 @@ import asyncio
 import json
 import os
 
-TOKEN = config("API_KEY_BOT")
-API_KEY = config("API_KEY_LAYER")
+TELEGRAM_BOT_TOKEN = config("API_KEY_BOT")
+API_LAYER_KEY = config("API_KEY_LAYER")
+
+CACHE_FILE_PATH = 'data/rate_data_cache.json'
+CURRENCIES_FILE_PATH = 'data/valid_currencies.json'
 
 SELECTING, CHOOSING_CURRENCY, CHOOSING_INTERVAL, SETTING_MIN_THRESHOLDS, SETTING_MAX_THRESHOLDS, MONITORING = range(6)
 
-CACHE_FILE_PATH = 'data/rate_data_cache.json'
-currencies_file_path = 'data/valid_currencies.json'
-
-with open(currencies_file_path, 'r', encoding='utf-8') as file:
+with open(CURRENCIES_FILE_PATH, 'r', encoding='utf-8') as file:
     currencies_data = json.load(file)
 
 if not os.path.exists("graphs"):
@@ -47,7 +47,7 @@ async def cancel(update: Update, context: CallbackContext):
         job.cancel()
     context.user_data.clear()
 
-    await update.message.reply_text("\U000026D4 Мониторинг отменен. Все настройки сброшены.\n\n"
+    await update.message.reply_html("\U000026D4 <b>Мониторинг отменен. Все настройки сброшены.</b>\n\n"
                                     "Используйте /settings, чтобы настроить мониторинг.")
     return ConversationHandler.END
 
@@ -55,7 +55,7 @@ def is_valid_currency(currency):
     return currency.upper() in currencies_data.get('currencies', {})
 
 async def settings(update: Update, context: CallbackContext):
-    await update.message.reply_text("\U0001F4B5 Выберите валюту, курс которой вы хотите мониторить (например, EUR, RUB, JPY):")
+    await update.message.reply_html("\U0001F4B5 Выберите валюту, курс которой вы хотите мониторить (например, EUR, RUB, JPY):")
     return CHOOSING_CURRENCY
 
 async def set_currency(update: Update, context: CallbackContext):
@@ -63,22 +63,22 @@ async def set_currency(update: Update, context: CallbackContext):
 
     if is_valid_currency(entered_currency):
         context.user_data['selected_currency'] = entered_currency
-        await update.message.reply_text(
-            f"\U00002705 Выбрана валюта: {context.user_data['selected_currency']}.\n\n"
+        await update.message.reply_html(
+            f"\U00002705 <b>Выбрана валюта: {context.user_data['selected_currency']}.</b>\n\n"
             "Теперь выберите интервал мониторинга в минутах (например, 15):"
         )
         return CHOOSING_INTERVAL
     else:
-        await update.message.reply_text("\U0000274C Пожалуйста, выберите корректную валюту.")
+        await update.message.reply_html("\U0000274C Пожалуйста, выберите корректную валюту!")
         return CHOOSING_CURRENCY
 
 async def set_interval(update: Update, context: CallbackContext):
     try:
         context.user_data['monitoring_interval'] = int(update.message.text)
         if context.user_data['monitoring_interval'] <= 0:
-            raise ValueError("\U0000274C Интервал мониторинга должен быть положительным числом.")
-        await update.message.reply_text(
-            f"\U000023F1 Выбран интервал мониторинга: {context.user_data['monitoring_interval']} минут.\n\n"
+            raise ValueError("\U0000274C Интервал мониторинга должен быть положительным числом!")
+        await update.message.reply_html(
+            f"\U000023F1 <b>Выбран интервал мониторинга: {context.user_data['monitoring_interval']} минут.</b>\n\n"
             "Введите нижнее значение курса, при достижении которого бот будет Вас уведомлять:"
         )
         return SETTING_MIN_THRESHOLDS
@@ -89,17 +89,17 @@ async def set_interval(update: Update, context: CallbackContext):
 async def set_min_threshold(update: Update, context: CallbackContext):
     try:
         context.user_data['min_threshold'] = float((update.message.text).replace(',', '.'))
-        await update.message.reply_text(f"\U0001F4C9 Нижняя граница установлена: {context.user_data['min_threshold']}\n\n"
+        await update.message.reply_html(f"\U0001F4C9 <b>Нижняя граница установлена: {context.user_data['min_threshold']}</b>\n\n"
                                         "Введите вверхнее значение курса, при достижении которого бот будет Вас уведомлять:")
         return SETTING_MAX_THRESHOLDS
     except ValueError:
-        await update.message.reply_text("\U0000274C Пожалуйста, введите корректное числовое значение для нижней границы.")
+        await update.message.reply_text("\U0000274C Пожалуйста, введите корректное числовое значение для нижней границы!")
         return SETTING_MIN_THRESHOLDS
 
 async def set_max_threshold(update: Update, context: CallbackContext):
     try:
         context.user_data['max_threshold'] = float((update.message.text).replace(',', '.'))
-        await update.message.reply_text(f"\U0001F4C8 Верхняя граница установлена: {context.user_data['max_threshold']}\n\n"
+        await update.message.reply_html(f"\U0001F4C8 <b>Верхняя граница установлена: {context.user_data['max_threshold']}</b>\n\n"
                                         "Используйте /monitor, чтобы начать мониторинг.")
         return ConversationHandler.END
     except ValueError:
@@ -116,7 +116,7 @@ async def monitor(update: Update, context: CallbackContext):
         base_currency = "USD"
         symbols = selected_currency
         url = f'https://api.apilayer.com/currency_data/live?base={base_currency}&symbols={symbols}'
-        headers = {'apikey': API_KEY}
+        headers = {'apikey': API_LAYER_KEY}
 
         async def monitor_task():
             while True:
@@ -138,12 +138,12 @@ async def monitor(update: Update, context: CallbackContext):
                         await draw_graph(update, context)
 
                         if min_threshold is not None and rate < min_threshold:
-                            await update.message.reply_text(
-                                f"\u26A0 Внимание!\n\nКурс {selected_currency} преодолел нижнюю границу: {rate}")
+                            await update.message.reply_html(
+                                f"\u26A0 <b>Внимание!</b>\n\nКурс {selected_currency} преодолел нижнюю границу: {rate}")
 
                         if max_threshold is not None and rate > max_threshold:
-                            await update.message.reply_text(
-                                f"\u26A0 Внимание!\n\nКурс {selected_currency} преодолел верхнюю границу: {rate}")
+                            await update.message.reply_html(
+                                f"\u26A0 <b>Внимание!</b>\n\nКурс {selected_currency} преодолел верхнюю границу: {rate}")
 
                 except Exception as e:
                     print(f"Error: {e}")
@@ -152,8 +152,8 @@ async def monitor(update: Update, context: CallbackContext):
 
         task = asyncio.create_task(monitor_task())
         context.user_data['job'] = task
-        await update.message.reply_text(
-            f"\U0001F680 Мониторинг курса {selected_currency} начат с интервалом {monitoring_interval} минут.\n\n"
+        await update.message.reply_html(
+            f"\U0001F680 <b>Мониторинг курса {selected_currency} начат с интервалом {monitoring_interval} минут.</b>\n\n"
             "Используйте команду /currency, чтобы узнать последнее значение курса.\n\n"
             "Используйте команду /cancel, чтобы отменить мониторинг.")
     else:
@@ -192,13 +192,13 @@ async def currency(update: Update, context: CallbackContext):
                 caption_text = f"\U0001F3C1 Последнее значение курса {selected_currency}: {last_rate}"
                 await update.message.reply_photo(photo=photo_file, caption=caption_text)
         else:
-            await update.message.reply_text("\U0000274C Нет данных о курсе. Начните мониторинг с помощью /monitor.")
+            await update.message.reply_text("\U0000274C <b>Нет данных о курсе.</b>\n\n Начните мониторинг с помощью /monitor.")
     else:
-        await update.message.reply_text("\U0000274C Не выбрана валюта для мониторинга.\n\nИспользуйте /settings.")
+        await update.message.reply_html("\U0000274C <b>Не выбрана валюта для мониторинга.</b>\n\nИспользуйте /settings.")
 
 def main():
     print("Bot started!")
-    application = Application.builder().token(TOKEN).build()
+    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
