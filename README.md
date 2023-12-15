@@ -14,6 +14,7 @@
 Перед запуском бота убедитесь, что у вас установлены следующие зависимости:
 
 - Python 3.x
+- Pip 22.x.x
 - Необходимые библиотеки Python (см. requirements.txt)
 
 ## Установка
@@ -29,7 +30,7 @@
 
 3. Настройка ключей API:
 
-- Создайте Telegram-бота через @BotFather и получите ключ API
+- Создайте Telegram-бота через [@BotFather](https://t.me/BotFather) и получите ключ API
 - Получите ключ API из сервиса [API Layer](https://apilayer.com/marketplace/currency_data-api) для данных о валюте
 
 4. Создайте файл .env в корне проекта и добавьте свои API-ключи:
