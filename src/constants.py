@@ -1,3 +1,7 @@
+"""
+Module containing configuration constants.
+"""
+
 from decouple import config
 
 TELEGRAM_BOT_TOKEN = config("API_KEY_BOT")

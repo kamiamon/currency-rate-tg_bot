@@ -1,10 +1,21 @@
+"""
+Module containing functions for drawing currency rate graphs.
+"""
+
+import matplotlib.pyplot as plt
 from telegram import Update
 from telegram.ext import CallbackContext
 from src.utils import load_rate_data_from_cache
 from src.constants import CACHE_FILE_PATH
-import matplotlib.pyplot as plt
 
 async def draw_graph(update: Update, context: CallbackContext):
+    """
+    Draw and save a currency rate graph based on the user's selected currency.
+
+    Args:
+        update (telegram.Update): The incoming update.
+        context (telegram.ext.CallbackContext): The callback context.
+    """
     selected_currency = context.user_data.get('selected_currency')
 
     recent_values = 12
