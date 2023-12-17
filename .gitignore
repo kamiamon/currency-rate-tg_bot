@@ -1,0 +1,5 @@
+.idea/
+.env
+graphs/
+src/__pycache__
+data/rate_data_cache.json
