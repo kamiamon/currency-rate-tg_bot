@@ -2,14 +2,68 @@
 Module containing functions for monitoring currency rates.
 """
 
-from datetime import datetime
 import asyncio
 import requests
-from telegram import Update
-from telegram.ext import CallbackContext
+from datetime import datetime
 from src.utils import load_rate_data_from_cache, save_rate_data_to_cache
-from src.constants import SELECTING, API_LAYER_KEY, CACHE_FILE_PATH
 from src.graph_drawer import draw_graph
+from telegram import Update
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    ConversationHandler,
+    filters,
+    CallbackContext,
+)
+from src.currency_settings import (
+    start,
+    cancel,
+    settings,
+    set_currency,
+    set_interval,
+    set_min_threshold,
+    set_max_threshold,
+)
+from src.constants import (
+    TELEGRAM_BOT_TOKEN,
+    API_LAYER_KEY,
+    CACHE_FILE_PATH,
+    SELECTING,
+    CHOOSING_CURRENCY,
+    CHOOSING_INTERVAL,
+    SETTING_MIN_THRESHOLDS,
+    SETTING_MAX_THRESHOLDS,
+)
+
+def main():
+    """
+    Main function to start the Telegram bot.
+    """
+    print("Bot started!")
+    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("start", start)],
+        states={
+            SELECTING: [CommandHandler("settings", settings)],
+            CHOOSING_CURRENCY: [MessageHandler(filters.TEXT & ~filters.COMMAND, set_currency)],
+            CHOOSING_INTERVAL: [MessageHandler(filters.TEXT & ~filters.COMMAND, set_interval)],
+            SETTING_MIN_THRESHOLDS: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, set_min_threshold)
+            ],
+            SETTING_MAX_THRESHOLDS: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, set_max_threshold)
+            ],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+
+    application.add_handler(conv_handler)
+    application.add_handler(CommandHandler("monitor", monitor))
+    application.add_handler(CommandHandler("currency", currency))
+    application.add_handler(CommandHandler("cancel", cancel))
+
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 async def monitor(update: Update, context: CallbackContext):
     """

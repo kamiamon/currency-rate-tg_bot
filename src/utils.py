@@ -5,7 +5,7 @@ Module containing utility functions.
 import os
 import json
 
-def is_valid_currency(currency, currencies_data):
+def is_valid_currency(currency: str, currencies_data: dict):
     """
     Check if the provided currency is valid.
 
@@ -18,7 +18,7 @@ def is_valid_currency(currency, currencies_data):
     """
     return currency.upper() in currencies_data.get('currencies', {})
 
-def load_rate_data_from_cache(file_path):
+def load_rate_data_from_cache(file_path: str):
     """
     Load rate data from a cache file.
 
@@ -36,7 +36,7 @@ def load_rate_data_from_cache(file_path):
             return json.load(file)
     return {}
 
-def save_rate_data_to_cache(data, file_path):
+def save_rate_data_to_cache(data: dict, file_path: str):
     """
     Save rate data to a cache file.
 
