@@ -159,7 +159,7 @@ async def currency(update: Update, context: CallbackContext):
                 )
                 await update.message.reply_photo(photo=photo_file, caption=caption_text)
         else:
-            await update.message.reply_text(
+            await update.message.reply_html(
                 "\U0000274C <b>Нет данных о курсе.</b>\n\n"
                 "Начните мониторинг с помощью /monitor."
             )
